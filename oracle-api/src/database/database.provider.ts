@@ -8,7 +8,7 @@ export const databaseProviders: Provider[] = [
       try {
         const connection = await getConnection({
           user: process.env.ORACLE_USER,
-          password: process.env.ORACLE_PASSWORD,
+          password: process.env.ORACLE_PWD,
           connectString: process.env.ORACLE_CONNECTION_STRING,
         });
         return connection;

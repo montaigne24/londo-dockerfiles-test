@@ -1,5 +1,5 @@
 # Étape de construction
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Création de l'utilisateur non-root
 RUN addgroup -g 1001 angular && \

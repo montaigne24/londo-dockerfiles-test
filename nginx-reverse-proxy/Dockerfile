@@ -3,7 +3,7 @@ FROM owasp/modsecurity-crs:nginx-alpine
 # 1. Configuration personnalisée
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY modsecurity.conf /etc/modsecurity.d/modsecurity.conf
-COPY crs-setup.conf /etc/modsecurity.d/crs-setup.conf
+# COPY crs-setup.conf /etc/modsecurity.d/crs-setup.conf
 COPY includes/ /etc/nginx/includes/
 COPY ssl/ /etc/nginx/ssl/
 

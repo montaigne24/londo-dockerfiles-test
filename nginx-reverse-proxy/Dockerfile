@@ -1,4 +1,4 @@
-FROM owasp/modsecurity-crs:nginx-1.25-alpine
+FROM owasp/modsecurity-crs:nginx-alpine
 
 # 1. Configuration personnalisée
 COPY nginx.conf /etc/nginx/nginx.conf

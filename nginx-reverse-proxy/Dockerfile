@@ -1,99 +1,44 @@
-# Étape de construction
-FROM nginx:1.25-alpine AS builder
-
-# Installation des dépendances
-RUN apk add --no-cache \
-    build-base \
-    openssl-dev \
-    pcre2-dev \
-    zlib-dev \
-    linux-headers \
-    libmaxminddb-dev \
-    git \
-    wget \
-    automake \
-    autoconf \
-    libtool \
-    pkgconf \
-    flex \
-    bison \
-    yajl-dev \
-    lmdb-dev \
-    libxml2-dev \
-    curl-dev \
-    geoip-dev
-
-# Clone ModSecurity
-RUN git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity
-RUN cd ModSecurity && \
-    git submodule init && \
-    git submodule update && \
-    ./build.sh && \
-    ./configure --with-pcre2 && \
-    make && \
-    make install
-
-# Clone ModSecurity-nginx (le connecteur Nginx)
-RUN git clone --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git
-
-# Téléchargement et compilation de Nginx
-ARG NGINX_VERSION=1.25.3
-RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && \
-    tar zxvf nginx-${NGINX_VERSION}.tar.gz && \
-    cd nginx-${NGINX_VERSION} && \
-    ./configure \
-        --prefix=/etc/nginx \
-        --sbin-path=/usr/sbin/nginx \
-        --modules-path=/usr/lib/nginx/modules \
-        --with-http_ssl_module \
-        --with-http_v2_module \
-        --with-http_realip_module \
-        --with-http_gunzip_module \
-        --with-http_gzip_static_module \
-        --with-http_stub_status_module \
-        --with-pcre \
-        --add-module=../ModSecurity-nginx \
-    && make \
-    && make install
-
-# Étape finale
 FROM nginx:1.25-alpine
 
-# Copie des artefacts
-COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
-COPY --from=builder /usr/lib/nginx/modules /usr/lib/nginx/modules
-COPY --from=builder /usr/local/modsecurity /usr/local/modsecurity
-COPY --from=builder /ModSecurity/nginx/modsecurity.conf /etc/nginx/modsecurity.conf
-
-# Dépendances d'exécution
+# 1. Installation des paquets nécessaires
 RUN apk add --no-cache \
-    libstdc++ \
-    libmaxminddb \
-    yajl \
-    lmdb \
-    libxml2 \
-    libcurl \
-    geoip \
-    pcre2 \
-    tzdata \
-    libmodsecurity
+    modsecurity \
+    modsecurity-nginx \
+    openssl \
+    certbot \
+    certbot-nginx \
+    && mkdir -p /etc/nginx/modsec
 
-# Configuration
-RUN mkdir -p /etc/nginx/modsec && \
-    cp /usr/local/modsecurity/lib/libmodsecurity.so.3 /usr/lib/ && \
-    echo "include /etc/nginx/modsec/modsecurity.conf" > /etc/nginx/modsec/main.conf && \
-    echo "include /etc/nginx/modsec/main.conf" >> /etc/nginx/nginx.conf
+# 2. Configuration de ModSecurity
+COPY modsecurity.conf /etc/nginx/modsec/
+COPY includes/ /etc/nginx/includes/
+COPY ssl/ /etc/nginx/ssl/
 
-# Utilisateur non-root
-RUN addgroup -g 1000 nginx && \
-    adduser -D -u 1000 -G nginx nginx && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx
+# 3. Configuration Nginx optimisée
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY default.conf /etc/nginx/conf.d/
 
-# Sécurité
-RUN sed -i "s/# server_tokens off;/server_tokens off;/g" /etc/nginx/nginx.conf
+# 4. Sécurité et optimisation
+RUN sed -i "s/# server_tokens off;/server_tokens off;/g" /etc/nginx/nginx.conf \
+    && echo "SecRuleEngine On" >> /etc/nginx/modsec/modsecurity.conf \
+    && echo "SecAuditLog /var/log/nginx/modsec_audit.log" >> /etc/nginx/modsec/modsecurity.conf \
+    && echo "include /etc/nginx/modsec/modsecurity.conf" > /etc/nginx/modsec/main.conf
 
+# 5. Création d'un utilisateur non-root
+RUN addgroup -g 1000 nginx \
+    && adduser -D -u 1000 -G nginx nginx \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && chown -R nginx:nginx /etc/nginx
+
+# 6. Configuration des volumes et ports
+VOLUME ["/var/log/nginx", "/etc/nginx/ssl"]
 EXPOSE 80 443
+
+# 7. Point d'entrée avec vérification SSL
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER nginx
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

@@ -15,7 +15,7 @@ RUN npm run build -- --configuration production
 FROM nginx:1.25-alpine
 
 # Copie des fichiers construits
-COPY --from=builder /app/dist/angular-app /usr/share/nginx/html
+COPY --from=builder /app/dist/angular-no-ssr /usr/share/nginx/html
 
 # Configuration NGINX
 # COPY nginx.conf /etc/nginx/conf.d/default.conf

@@ -21,12 +21,10 @@ USER root
 
 # 2. Configurer les permissions nécessaires
 RUN chown -R nginx:nginx /etc/nginx \
-    && chown -R nginx:nginx /var/log/nginx \
-    && chown -R nginx:nginx /var/cache/nginx
+    && chown -R nginx:nginx /var/log/nginx 
 
 # Configuration NGINX
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
-COPY --chown=nginx:nginx default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

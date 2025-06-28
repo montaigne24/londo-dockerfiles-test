@@ -1,10 +1,10 @@
 # Étape de construction
 FROM nginx:1.25-alpine AS builder
 
-# Installation des dépendances pour compiler les modules
+# Installation des dépendances pour compiler les modules (avec OpenSSL au lieu de LibreSSL)
 RUN apk add --no-cache \
     build-base \
-    libressl-dev \
+    openssl-dev \
     pcre-dev \
     zlib-dev \
     linux-headers \
@@ -20,7 +20,6 @@ RUN apk add --no-cache \
     yajl-dev \
     lmdb-dev \
     libxml2-dev \
-    libstdc++ \
     curl-dev \
     geoip-dev
 
@@ -93,4 +92,4 @@ EXPOSE 80 443
 # Utilisateur non-root
 USER nginx
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon

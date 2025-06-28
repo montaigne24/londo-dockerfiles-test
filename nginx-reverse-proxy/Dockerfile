@@ -1,11 +1,11 @@
 # Étape de construction
 FROM nginx:1.25-alpine AS builder
 
-# Installation des dépendances pour compiler les modules (avec OpenSSL au lieu de LibreSSL)
+# Installation des dépendances pour compiler les modules (avec PCRE2)
 RUN apk add --no-cache \
     build-base \
     openssl-dev \
-    pcre-dev \
+    pcre2-dev \
     zlib-dev \
     linux-headers \
     libmaxminddb-dev \
@@ -29,11 +29,11 @@ RUN git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLa
     && git submodule init \
     && git submodule update \
     && ./build.sh \
-    && ./configure \
+    && ./configure --with-pcre2 \
     && make \
     && make install
 
-# Compilation de NGINX avec ModSecurity
+# Téléchargement et compilation de Nginx avec ModSecurity
 RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz \
     && tar zxvf nginx-${NGINX_VERSION}.tar.gz \
     && cd nginx-${NGINX_VERSION} \
@@ -47,6 +47,7 @@ RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz \
         --with-http_gunzip_module \
         --with-http_gzip_static_module \
         --with-http_stub_status_module \
+        --with-pcre \
         --add-module=../ModSecurity-nginx \
     && make \
     && make install
@@ -68,6 +69,7 @@ RUN apk add --no-cache \
     libxml2 \
     libcurl \
     geoip \
+    pcre2 \
     tzdata
 
 # Configuration
@@ -92,4 +94,4 @@ EXPOSE 80 443
 # Utilisateur non-root
 USER nginx
 
-CMD ["nginx", "-g", "daemon
+CMD ["nginx", "-g", "daemon off;"]

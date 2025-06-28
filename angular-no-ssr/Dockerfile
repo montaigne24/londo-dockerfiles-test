@@ -1,5 +1,5 @@
 # Étape de construction
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -21,8 +21,8 @@ COPY --from=builder /app/dist/angular-app /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Création d'un utilisateur non-root
-RUN addgroup -g 1000 nginx && \
-    adduser -D -u 1000 -G nginx nginx && \
+RUN addgroup -g 1001 nginx && \
+    adduser -D -u 1001 -G nginx nginx && \
     chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /usr/share/nginx/html

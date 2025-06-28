@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # Reverse Proxy Nginx avec WAF
+  reverse-proxy:
+    build: 
+      context: ./nginx-reverse-proxy
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontend-network
+      - backend-network
+    restart: unless-stopped
+    depends_on:
+      - angular-ssr
+      - angular-no-ssr
+      - nestjs-api
+      - express-api
+    volumes:
+      - ./nginx-reverse-proxy/ssl:/etc/nginx/ssl:ro
+      - ./nginx-reverse-proxy/includes:/etc/nginx/includes:ro
+    environment:
+      - NGINX_ENV=production
+    security_opt:
+      - no-new-privileges:true
+
+  # Angular avec SSR
+  angular-ssr:
+    build:
+      context: ./angular-ssr
+      dockerfile: Dockerfile
+    expose:
+      - "4000"
+    networks:
+      - backend-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Angular sans SSR
+  angular-no-ssr:
+    build:
+      context: ./angular-no-ssr
+      dockerfile: Dockerfile
+    expose:
+      - "80"
+    networks:
+      - backend-network
+    restart: unless-stopped
+    environment:
+      - NGINX_ENV=production
+
+  # API NestJS
+  nestjs-api:
+    build:
+      context: ./nestjs
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    networks:
+      - backend-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=oracle-api:1521/XE
+    depends_on:
+      - oracle-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Express
+  express-api:
+    build:
+      context: ./express
+      dockerfile: Dockerfile
+    expose:
+      - "8080"
+    networks:
+      - backend-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=oracle-api:1521/XE
+    depends_on:
+      - oracle-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Base de données Oracle
+  oracle-api:
+    build:
+      context: ./oracle-api
+      dockerfile: Dockerfile
+    expose:
+      - "1521"
+    networks:
+      - backend-network
+    restart: unless-stopped
+    environment:
+      - ORACLE_PWD=StrongPassword123
+      - ORACLE_CHARACTERSET=AL32UTF8
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "tnsping", "XE"]
+      interval: 1m
+      timeout: 10s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+
+# Configuration des réseaux
+networks:
+  frontend-network:
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+  backend-network:
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+
+# Volumes pour la persistance des données
+volumes:
+  oracle-data:
+    driver: local

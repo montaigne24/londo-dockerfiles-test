@@ -1,5 +1,5 @@
 # Étape de construction
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -12,11 +12,11 @@ COPY . .
 RUN npm run build
 
 # Étape d'exécution
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Création de l'utilisateur non-root
-RUN addgroup -g 1000 nest && \
-    adduser -u 1000 -G nest -D nest
+RUN addgroup -g 1001 nest && \
+    adduser -u 1001 -G nest -D nest
 
 WORKDIR /app
 

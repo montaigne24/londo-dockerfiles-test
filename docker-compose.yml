@@ -20,7 +20,7 @@ services:
       - express-api
     volumes:
       - ./nginx-reverse-proxy/ssl:/etc/nginx/ssl:ro
-      - ./nginx-reverse-proxy/includes:/etc/nginx/includes:ro
+      - ./nginx-reverse-proxy/includes:/etc/nginx/includes
     environment:
       - NGINX_ENV=production
     security_opt:

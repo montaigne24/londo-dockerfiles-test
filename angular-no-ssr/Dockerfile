@@ -18,7 +18,7 @@ FROM nginx:1.25-alpine
 COPY --from=builder /app/dist/angular-app /usr/share/nginx/html
 
 # Configuration NGINX
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Création d'un utilisateur non-root
 RUN addgroup -g 1001 nginx && \

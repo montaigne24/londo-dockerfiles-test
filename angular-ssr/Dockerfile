@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build:ssr
 
 # Étape d'exécution
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Création de l'utilisateur non-root
 RUN addgroup -g 1001 angular && \

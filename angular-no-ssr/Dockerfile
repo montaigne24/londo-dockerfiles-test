@@ -1,5 +1,5 @@
 # Étape de construction
-FROM node:22-alpine AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -15,17 +15,24 @@ RUN npm run build -- --configuration production
 FROM nginx:1.25-alpine
 
 # Copie des fichiers construits
-COPY --from=builder /app/dist/angular-no-ssr /usr/share/nginx/html
+COPY --from=builder /app/dist/angular-app /usr/share/nginx/html
 
 # Configuration NGINX
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY default.conf /etc/nginx/conf.d/default.conf
 
-# Création d'un utilisateur non-root
-# RUN addgroup -g 1001 nginx && \
-#     adduser -D -u 1001 -G nginx nginx && \
-#     chown -R nginx:nginx /var/cache/nginx && \
-#     chown -R nginx:nginx /var/log/nginx && \
-#     chown -R nginx:nginx /usr/share/nginx/html
+# Création des répertoires nécessaires avec les bonnes permissions
+RUN mkdir -p /var/cache/nginx && \
+    mkdir -p /var/run && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/run && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /var/cache/nginx && \
+    touch /var/run/nginx.pid && \
+    chown nginx:nginx /var/run/nginx.pid
+
+# Suppression de la directive 'user' si vous utilisez un utilisateur non-root
+# (elle sera gérée par la commande USER ci-dessous)
 
 EXPOSE 80
 

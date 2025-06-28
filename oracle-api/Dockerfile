@@ -1,10 +1,9 @@
 # Étape de construction du client Oracle
-FROM oraclelinux:8-slim AS oracle-builder
+FROM oraclelinux:8 AS oracle-builder
 
-# Utilisez yum au lieu de dnf (Oracle Linux 8 utilise yum par défaut)
-RUN yum -y install oracle-release-el8 && \
-    yum -y install oracle-instantclient19.19-basiclite && \
-    rm -rf /var/cache/yum
+RUN microdnf install -y oracle-release-el8 && \
+    microdnf install -y oracle-instantclient19.19-basiclite && \
+    microdnf clean all
 
 # Étape de construction de l'application
 FROM node:22-alpine AS app-builder
@@ -18,9 +17,9 @@ COPY . .
 RUN npm run build
 
 # Étape finale
-FROM node:18-alpine
+FROM node:22-alpine
 
-# Création de l'utilisateur non-root (note: 1000 peut être déjà utilisé, donc 1001)
+# Création de l'utilisateur non-root
 RUN addgroup -g 1001 oracleapp && \
     adduser -u 1001 -G oracleapp -D oracleapp
 
@@ -30,12 +29,13 @@ WORKDIR /app
 COPY --from=oracle-builder /usr/lib/oracle /usr/lib/oracle
 COPY --from=oracle-builder /usr/share/oracle /usr/share/oracle
 
+# Installation des dépendances requises
+RUN apk add --no-cache libaio
+
 # Variables d'environnement pour Oracle
 ENV LD_LIBRARY_PATH /usr/lib/oracle/19.19/client64/lib:$LD_LIBRARY_PATH
 ENV ORACLE_HOME /usr/lib/oracle/19.19/client64
-
-# Installation des dépendances requises
-RUN apk add --no-cache libaio
+ENV PATH $ORACLE_HOME/bin:$PATH
 
 # Copie de l'application
 COPY --from=app-builder --chown=oracleapp:oracleapp /app/node_modules ./node_modules

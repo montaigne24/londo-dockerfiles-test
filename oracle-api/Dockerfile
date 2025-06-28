@@ -6,7 +6,7 @@ RUN dnf -y install oracle-release-el8 && \
     rm -rf /var/cache/dnf
 
 # Étape de construction de l'application
-FROM node:18-alpine AS app-builder
+FROM node:22-alpine AS app-builder
 
 WORKDIR /app
 
@@ -20,8 +20,8 @@ RUN npm run build
 FROM node:18-alpine
 
 # Création de l'utilisateur non-root
-RUN addgroup -g 1000 oracleapp && \
-    adduser -u 1000 -G oracleapp -D oracleapp
+RUN addgroup -g 1001 oracleapp && \
+    adduser -u 1001 -G oracleapp -D oracleapp
 
 WORKDIR /app
 

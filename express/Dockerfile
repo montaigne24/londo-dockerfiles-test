@@ -1,5 +1,5 @@
 # Étape de construction
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -11,8 +11,8 @@ RUN npm ci --only=production
 FROM node:18-alpine
 
 # Création de l'utilisateur non-root
-RUN addgroup -g 1000 express && \
-    adduser -u 1000 -G express -D express
+RUN addgroup -g 1001 express && \
+    adduser -u 1001 -G express -D express
 
 WORKDIR /app
 

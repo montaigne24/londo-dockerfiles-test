@@ -2,8 +2,8 @@
 FROM node:18-alpine AS builder
 
 # Création de l'utilisateur non-root
-RUN addgroup -g 1000 angular && \
-    adduser -u 1000 -G angular -D angular
+RUN addgroup -g 1001 angular && \
+    adduser -u 1001 -G angular -D angular
 
 WORKDIR /app
 
